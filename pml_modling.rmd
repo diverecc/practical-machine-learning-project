@@ -1,0 +1,127 @@
+---
+title: "PML Modeling Project - Practical Machine Machine Learning"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+---
+# Background
+---
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: [groupware](http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+---
+# Data (downloaded on 25 September 2016)
+---
+
+The training data for this project are available here:[training set](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv)
+
+The validation data are available here:[validation set](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv)
+
+The goal of my project is to predict 20 different validation cases. I will walk you through each step to explain how I created the model and what the results of my prediction were against the validation data set.
+
+---
+# Environement Preparation
+---
+```{r}
+library(caret)
+```
+
+I first read the training data set, with translating all empty values in NA.
+
+```{r}
+pmltraining<-read.csv("pml-training.csv",stringsAsFactors=FALSE,na.strings=c("","NA","NULL"))
+```
+I have a look at the structure of the set and found 160 columns and 19622 rows
+```{r}
+str(pmltraining)
+```
+---
+# Phase 1 - Do data clean up
+---
+I remove the columns with at least one NA value from training set.
+These variables are unlikely to be of any use for a prediction model. 
+```{r}
+pmltraining <- pmltraining[, colSums(is.na(pmltraining)) == 0]
+```
+Let's have anotherlook after NA cleanup. We now have 60 columns left.
+```{r}
+dim(pmltraining)
+```
+For prediction, the first 6 variables are irrelevant, let's remove them too.
+Now 53 columns left
+```{r}
+pmltraining <- pmltraining[,8:ncol(pmltraining)]
+dim(pmltraining)
+```
+Let's now check whether we have near zero variation in some of potential predictors. We have none.
+```{r}
+nsv<-nearZeroVar(training,saveMetrics=F)
+dim(nsv)
+```
+Now let's check whether we have highly correlated numeric variables (all int or num except column classe). 
+```{r}
+correlation <- cor(pmltraining[,-ncol(pmltraining)])
+dim(correlation) # there are 52 variables
+foundcor <- findCorrelation(correlation)
+str(foundcor)
+```
+We have the columns number 10  1  9  8 31 33 18. Let's remove them from the set to speed up the prediction algorithm later on. We now have 46 columns left. A good cleanup from 160.
+```{r}
+pmltraining <- pmltraining[,-foundcor]
+dim(pmltraining)
+```
+---
+# Phase 2 - Create a model
+---
+I split the cleaned pml_training set in a training and a testing set to keep testing_plm.csv as validation test
+```{r}
+inTrain<-createDataPartition(y=pmltraining$classe,p=0.70,list=F) #vector of row numbers
+training <- pmltraining[inTrain,]
+testing<-pmltraining[-inTrain,]
+```
+My first experiment is to use a regression tree
+```{r}
+library(rpart)
+set.seed(123456)
+rtmodel<-train(classe ~ .,method="rpart",data=training)
+varImp(rtmodel)
+```
+Then I plot it to get an overall look
+```{r tree, echo=FALSE}
+library(ggplot2)
+plot(rtmodel$finalModel,uniform=T,main="classification Tree") #basic tree with text
+text(rtmodel$finalModel,use.n=T, all=T,cex=.8)
+```
+
+Let's now look at the accuracy and the KAPPA of the prediction. An accuracy of 0.5336 not good enough.
+```{r}
+rtresult <- predict(rtmodel,newdata=testing)
+confusionMatrix(rtresult,testing$classe)
+```
+My second experiment is to use a generalizerd boosted model
+```{r}
+set.seed(123456)
+gbmmodel<-train(classe ~ .,method="gbm",data=training,trControl=trainControl(),verbose=FALSE)
+print(gbmmodel$finalModel)
+varImp(gbmmodel) # Note that the 20 most important variables are not the same
+```
+Let's plot the model
+```{r gbm, echo=FALSE}
+plot(gbmmodel)
+```
+Let's see whether we have improved the accuracy of the prediction against the same testing set
+```{r}
+gbmresult <- predict(gbmmodel,newdata=testing)
+confusionMatrix(gbmresult,testing$classe)
+```
+The result is an accuracy of 0.9594 and a Kappa of 0.9486. I decide to stop here to avoid overfitting of the model to the training set. I can now predict correctly in 95 % of cases.
+
+Let's use now the validation set from testing_plm.csv
+```{r}
+pmlvalidation<-read.csv("pml-testing.csv",stringsAsFactors=FALSE,na.strings=c("","NA","NULL"))
+result <- predict(gbmmodel,newdata=pmlvalidation)
+print(result)
+```
+All results are correct except for sample 6. As calculated by the model, this is a 95% accurate.
