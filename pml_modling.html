@@ -314,7 +314,7 @@ gbmmodel&lt;-<span class="kw">train</span>(classe ~<span class="st"> </span>.,<s
 ## Detection Rate         0.2794   0.1811   0.1652   0.1572   0.1798
 ## Detection Prevalence   0.2845   0.1920   0.1777   0.1638   0.1820
 ## Balanced Accuracy      0.9875   0.9612   0.9661   0.9758   0.9876</code></pre>
-<p>The result is an accuracy of 0.9594 and a Kappa of 0.9486. I decide to stop here to avoid overfitting of the model to the training set. I can now predict correctly in 95 % of cases.</p>
+<p>The result is an accuracy of 0.9626 and a Kappa of 0.9527. I decide to stop here to avoid overfitting of the model to the training set. I can now predict correctly in 95 % of cases.</p>
 <p>Let's use now the validation set from testing_plm.csv</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pmlvalidation&lt;-<span class="kw">read.csv</span>(<span class="st">&quot;pml-testing.csv&quot;</span>,<span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>,<span class="dt">na.strings=</span><span class="kw">c</span>(<span class="st">&quot;&quot;</span>,<span class="st">&quot;NA&quot;</span>,<span class="st">&quot;NULL&quot;</span>))
 result &lt;-<span class="st"> </span><span class="kw">predict</span>(gbmmodel,<span class="dt">newdata=</span>pmlvalidation)
