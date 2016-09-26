@@ -371,7 +371,7 @@ confusionMatrix(gbmresult,testing$classe)
     ## Detection Prevalence   0.2845   0.1920   0.1777   0.1638   0.1820
     ## Balanced Accuracy      0.9875   0.9612   0.9661   0.9758   0.9876
 
-The result is an accuracy of 0.9594 and a Kappa of 0.9486. I decide to stop here to avoid overfitting of the model to the training set. I can now predict correctly in 95 % of cases.
+The result is an accuracy of 0.9626 and a Kappa of 0.9527. I decide to stop here to avoid overfitting of the model to the training set. I can now predict correctly in 95 % of cases.
 
 Let's use now the validation set from testing\_plm.csv
 
